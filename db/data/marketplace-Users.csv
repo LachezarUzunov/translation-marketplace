@@ -1,0 +1,6 @@
+ID;role;name;email;creditBalance;cashBalance
+buyer1;Buyer;Anna Buyer;anna@example.com;0;0
+buyer2;Buyer;Boris Buyer;boris@example.com;0;0
+translator1;Translator;Ivan Translator;ivan@example.com;0;0
+translator2;Translator;Elena Translator;elena@example.com;0;0
+admin;Admin;Admin;admin@example.com;0;0

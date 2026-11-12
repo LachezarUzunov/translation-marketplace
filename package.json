@@ -1,0 +1,60 @@
+{
+  "name": "translation-marketplace",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@sap/cds": "^10"
+  },
+  "devDependencies": {
+    "@cap-js/sqlite": "^3"
+  },
+  "scripts": {
+    "start": "cds-serve"
+  },
+  "private": true,
+  "cds": {
+    "marketplace": {
+      "commission": {
+        "rate": 0.2,
+        "minimum": 10
+      }
+    },
+    "requires": {
+      "auth": {
+        "kind": "mocked",
+        "users": {
+          "buyer1": {
+            "password": "pass",
+            "roles": [
+              "Buyer"
+            ]
+          },
+          "buyer2": {
+            "password": "pass",
+            "roles": [
+              "Buyer"
+            ]
+          },
+          "translator1": {
+            "password": "pass",
+            "roles": [
+              "Translator"
+            ]
+          },
+          "translator2": {
+            "password": "pass",
+            "roles": [
+              "Translator"
+            ]
+          },
+          "admin": {
+            "password": "pass",
+            "roles": [
+              "Admin"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
