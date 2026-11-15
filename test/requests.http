@@ -50,3 +50,37 @@ Authorization: Basic translator1:pass
 Content-Type: application/json
 
 { "languagePair_ID": "11111111-1111-1111-1111-111111111111", "type": "Certified", "pricePerWord": 0.12 }
+### Преводач 1 опитва да премести своя оферта към чужда двойка -> 400
+PATCH {{base}}/translator/Offers(aaaaaaaa-0000-0000-0000-000000000001)
+Authorization: Basic translator1:pass
+Content-Type: application/json
+
+{ "languagePair_ID": "33333333-3333-3333-3333-333333333333" }
+
+### Смяна на цената -> status става Pending
+PATCH {{base}}/translator/Offers(aaaaaaaa-0000-0000-0000-000000000002)
+Authorization: Basic translator1:pass
+Content-Type: application/json
+
+{ "pricePerWord": 0.035 }
+
+### Теглене над баланса -> 400
+POST {{base}}/translator/Withdrawals
+Authorization: Basic translator1:pass
+Content-Type: application/json
+
+{ "amount": 50 }
+
+### Поръчка към неактивна оферта -> 400
+POST {{base}}/buyer/Orders
+Authorization: Basic buyer1:pass
+Content-Type: application/json
+
+{ "offer_ID": "aaaaaaaa-0000-0000-0000-000000000004", "wordCount": 100, "title": "Test" }
+
+### Поръчка с wordCount 0 -> 400 (ASSERT_RANGE)
+POST {{base}}/buyer/Orders
+Authorization: Basic buyer1:pass
+Content-Type: application/json
+
+{ "offer_ID": "aaaaaaaa-0000-0000-0000-000000000001", "wordCount": 0, "title": "Test" }

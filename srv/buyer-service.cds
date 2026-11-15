@@ -11,6 +11,7 @@ service BuyerService {
     languagePair.sourceLanguage  as sourceLanguage,
     languagePair.targetLanguage  as targetLanguage,
     languagePair.yearsExperience as yearsExperience,
+    pricePerWord,
     languagePair.translator.name as translatorName
   } where status = 'Approved' and active = true and languagePair.status = 'Approved';
 

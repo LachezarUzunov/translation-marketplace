@@ -59,6 +59,8 @@ entity Offers : cuid, managed {
   languagePair : Association to LanguagePairs;
   @assert.range
   type         : OfferType;
+  @mandatory
+  @assert.range: [0.001, 99]
   pricePerWord : PricePerWord;
   active       : Boolean default true;
   @assert.range
@@ -67,9 +69,12 @@ entity Offers : cuid, managed {
 
 entity Orders : cuid, managed {
   buyer           : Association to Users;
+  @mandatory
   offer           : Association to Offers;
   @assert.range
   status          : OrderStatus default 'Pending';
+  @mandatory
+  @assert.range: [1, 1000000]
   wordCount       : Integer;
   // цените се изчисляват и записват при създаване, после не се променят
   translatorPrice : Money;
