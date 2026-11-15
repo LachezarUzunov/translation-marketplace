@@ -84,3 +84,11 @@ Authorization: Basic buyer1:pass
 Content-Type: application/json
 
 { "offer_ID": "aaaaaaaa-0000-0000-0000-000000000001", "wordCount": 0, "title": "Test" }
+
+### Купувач: цена за 1000 думи (очакваш buyerPrice 96)
+GET {{base}}/buyer/quote(offer=aaaaaaaa-0000-0000-0000-000000000001,wordCount=1000)
+Authorization: Basic buyer1:pass
+
+### Купувач: цена за 100 думи, минимална комисионна (очакваш 18)
+GET {{base}}/buyer/quote(offer=aaaaaaaa-0000-0000-0000-000000000001,wordCount=100)
+Authorization: Basic buyer1:pass

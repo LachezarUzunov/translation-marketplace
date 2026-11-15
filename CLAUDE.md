@@ -10,6 +10,7 @@ Translation Marketplace е портфолио проект на SAP CAP (Node.js
 Пиши директно, без увъртания. Ако предложението ми е грешно, кажи го.
 Разговаряме на български, а кодът, коментарите в кода и commit съобщенията са на английски.
 Всеки ден завършва с commit.
+В края на всеки ден: файл с обобщение в d:\SAP-NODE-Project\learning-notes\den-XX.md (извън repo-то), на български, чист Markdown за импорт в Notion. Съдържа научените понятия с дефиниции, обяснения, примери от проекта, сравнения с Express/Laravel, типични въпроси за интервю с отговори и грешките, които направих.
 Стек
 @sap/cds / @sap/cds-dk 10.x, Node.js 26, Windows + PowerShell
 SQLite в паметта локално (cds watch), HANA Cloud или PostgreSQL в BTP
@@ -46,7 +47,8 @@ buyerPrice = translatorPrice + commission
 Права на ниво запис с @restrict + where.
 Полетата, които клиентът не бива да задава, са @readonly, а handler-ът ги попълва (owner = req.user.id).
 Проекциите изброяват полетата изрично: купувачът не вижда translatorPrice и commission, а преводачът не вижда buyer и buyerPrice.
-Проверки за права в handler-ите. Четат от db entities (marketplace.X), не от service entities, защото @restrict би скрил записите.
+Проверки в handler-ите четат от db entities (marketplace.X): проекцията може да крие полета или да има where. `await SELECT` отива директно в базата, без @restrict; само this.run / this.read минават през правата. Service entity се ползва нарочно, когато искаме филтъра ѝ (напр. BuyerService.Offers като каталог).
+Пари и броячи се променят атомарно в базата: UPDATE(...).with({ creditBalance: { '+=': x } }), условен UPDATE ... WHERE status = 'X' / balance >= x с проверка на броя редове. Никога read-modify-write в JS.
 where при @restrict не важи за CREATE. Собствеността при създаване се проверява в before CREATE.
 Тестови потребители (mocked, парола pass)
 

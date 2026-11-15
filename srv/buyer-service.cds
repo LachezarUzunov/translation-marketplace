@@ -31,6 +31,16 @@ service BuyerService {
   entity Transactions as projection on db.Transactions {
     ID, user, order, type, amount, currency, createdAt
   };
+
+  // Price preview without creating an order.
+  // Returns only buyerPrice: the buyer must not see translatorPrice / commission.
+  type Quote {
+    offer        : UUID;
+    wordCount    : Integer;
+    pricePerWord : db.PricePerWord;
+    buyerPrice   : db.Money;
+  }
+  function quote(offer : UUID, wordCount : Integer) returns Quote;
 }
 
 annotate BuyerService.Orders with {
