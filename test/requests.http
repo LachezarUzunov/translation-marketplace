@@ -1,0 +1,52 @@
+@base = http://localhost:4004/odata/v4
+
+### Без логин -> 401
+GET {{base}}/buyer/Offers
+
+### Купувач: каталогът (очакваш 3 оферти)
+GET {{base}}/buyer/Offers
+Authorization: Basic buyer1:pass
+
+### Купувач: каталог само за превод към български
+GET {{base}}/buyer/Offers?$filter=targetLanguage eq 'bg'
+Authorization: Basic buyer1:pass
+
+### Купувач в услугата на преводача -> 403
+GET {{base}}/translator/LanguagePairs
+Authorization: Basic buyer1:pass
+
+### Преводач: само своите езикови двойки (очакваш 2)
+GET {{base}}/translator/LanguagePairs?$expand=offers
+Authorization: Basic translator1:pass
+
+### Преводач: опит да създаде вече одобрена двойка
+POST {{base}}/translator/LanguagePairs
+Authorization: Basic translator1:pass
+Content-Type: application/json
+
+{ "sourceLanguage": "it", "targetLanguage": "bg", "yearsExperience": 5, "status": "Approved" }
+
+### Админ: всички езикови двойки
+GET {{base}}/admin/LanguagePairs
+Authorization: Basic admin:pass
+
+### Преводач: нова двойка (translator_ID трябва да е translator1)
+POST {{base}}/translator/LanguagePairs
+Authorization: Basic translator1:pass
+Content-Type: application/json
+
+{ "sourceLanguage": "it", "targetLanguage": "bg", "yearsExperience": 5 }
+
+### Преводач 1 опитва оферта към двойката на преводач 2 -> 403
+POST {{base}}/translator/Offers
+Authorization: Basic translator1:pass
+Content-Type: application/json
+
+{ "languagePair_ID": "33333333-3333-3333-3333-333333333333", "type": "Translation", "pricePerWord": 0.05 }
+
+### Преводач 1 създава оферта към своя двойка -> 201, status Pending
+POST {{base}}/translator/Offers
+Authorization: Basic translator1:pass
+Content-Type: application/json
+
+{ "languagePair_ID": "11111111-1111-1111-1111-111111111111", "type": "Certified", "pricePerWord": 0.12 }
