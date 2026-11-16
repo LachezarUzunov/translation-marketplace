@@ -92,3 +92,29 @@ Authorization: Basic buyer1:pass
 ### Купувач: цена за 100 думи, минимална комисионна (очакваш 18)
 GET {{base}}/buyer/quote(offer=aaaaaaaa-0000-0000-0000-000000000001,wordCount=100)
 Authorization: Basic buyer1:pass
+
+### Купувач: зареждане на 100 кредита
+POST {{base}}/buyer/topUp
+Authorization: Basic buyer1:pass
+Content-Type: application/json
+
+{ "amount": 100 }
+
+### Купувач: поръчка 1000 думи (96 кредита). status/buyer_ID/buyerPrice се игнорират
+POST {{base}}/buyer/Orders
+Authorization: Basic buyer1:pass
+Content-Type: application/json
+
+{ "offer_ID": "aaaaaaaa-0000-0000-0000-000000000001", "wordCount": 1000, "title": "Contract", "status": "Completed", "buyerPrice": 1 }
+
+### Купувач: баланс (очакваш 4.00 след горните две)
+GET {{base}}/buyer/Me
+Authorization: Basic buyer1:pass
+
+### Купувач: леджър (TopUp +100, Hold -96)
+GET {{base}}/buyer/Transactions
+Authorization: Basic buyer1:pass
+
+### Преводач: вижда поръчката с translatorPrice, без buyerPrice
+GET {{base}}/translator/Orders
+Authorization: Basic translator1:pass

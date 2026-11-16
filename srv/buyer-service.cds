@@ -40,7 +40,16 @@ service BuyerService {
     pricePerWord : db.PricePerWord;
     buyerPrice   : db.Money;
   }
-  function quote(offer : UUID, wordCount : Integer) returns Quote;
+  function quote(
+    @mandatory offer : UUID,
+    @mandatory @assert.range: [1, 1000000] wordCount : Integer
+  ) returns Quote;
+
+  // Mock payment: adds credits to the buyer's balance (1 credit = 1 USD).
+  // In production this would be triggered by a payment provider webhook.
+  action topUp(
+    @mandatory @assert.range: [1, 10000] amount : db.Money
+  ) returns Me;
 }
 
 annotate BuyerService.Orders with {

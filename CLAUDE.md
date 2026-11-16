@@ -67,7 +67,7 @@ Mocked auth пуска непознати потребители без роли
 [x] Ден 1–2: setup, основи на OData V4
 [x] Ден 3: модел, enums, CSV данни, конфигурация на комисионната
 [x] Ден 4: услуги по роли, @requires / @restrict, mocked auth
-[ ] Ден 5: handler-и. Започнато: srv/translator-service.js (owner при CREATE, проверка за собственост на офертата). Предстои създаване на поръчка (цени, проверка на баланса, Hold), function quote, TopUp.
+[x] Ден 5: handler-и: ESM, валидации (анотации + handler-и), pricing.js (чиста функция, цели центове, node:test), function quote, action topUp, on CREATE Orders (атомарен Hold с условен UPDATE, леджър, OrderEvent)
 [ ] Ден 6: bound actions за преходите + OrderEvents
 [ ] Ден 7: Refund, Release + Commission, тегления; атомарност
 [ ] Ден 8: тестове с cds.test (целият поток, рефънд, недостатъчен баланс, двойно одобрение, баланс = сума на транзакциите)

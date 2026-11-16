@@ -3,7 +3,7 @@ import { calculatePrice } from "./lib/pricing.js";
 
 export default class BuyerService extends cds.ApplicationService {
   init() {
-    const { Orders, Offers } = this.entities;
+    const { Orders, Offers, Me } = this.entities;
 
     // BuyerService.Offers already filters to approved + active offers
     // of approved pairs, so we reuse it as the "catalog" check.
@@ -15,23 +15,89 @@ export default class BuyerService extends cds.ApplicationService {
 
     this.on("quote", async (req) => {
       const { offer: offerId, wordCount } = req.data;
-      if (!Number.isInteger(wordCount) || wordCount < 1 || wordCount > 1000000) {
-        return req.reject(400, "wordCount must be between 1 and 1000000");
-      }
-
       const offer = await findAvailableOffer(req, offerId);
       const { buyerPrice } = calculatePrice(
         offer.pricePerWord,
         wordCount,
         cds.env.marketplace.commission,
       );
-
       return { offer: offerId, wordCount, pricePerWord: offer.pricePerWord, buyerPrice };
     });
 
-    this.before("CREATE", Orders, async (req) => {
-      req.data.buyer_ID = req.user.id;
-      await findAvailableOffer(req, req.data.offer_ID);
+    this.on("topUp", async (req) => {
+      const { amount } = req.data;
+
+      // Atomic increment in the database, never read-modify-write in JS
+      const updated = await UPDATE("marketplace.Users")
+        .with({ creditBalance: { "+=": amount } })
+        .where({ ID: req.user.id });
+      if (updated !== 1) return req.reject(404, "User profile not found");
+
+      await INSERT.into("marketplace.Transactions").entries({
+        user_ID: req.user.id,
+        type: "TopUp",
+        amount,
+        currency: "Credits",
+      });
+
+      return SELECT.one.from(Me, req.user.id);
+    });
+
+    // We replace the generic CREATE: the order needs fields the buyer's
+    // projection does not expose (translatorPrice, commission), plus the
+    // balance hold. Everything runs in the request's single DB transaction:
+    // if any step fails, all of them are rolled back.
+    this.on("CREATE", Orders, async (req) => {
+      const { offer_ID, wordCount, title, instructions, sourceText } = req.data;
+      const offer = await findAvailableOffer(req, offer_ID);
+      const prices = calculatePrice(
+        offer.pricePerWord,
+        wordCount,
+        cds.env.marketplace.commission,
+      );
+
+      // 1. Hold the credits. Check and update in ONE statement, so two
+      //    parallel orders cannot both pass the balance check.
+      const held = await UPDATE("marketplace.Users")
+        .with({ creditBalance: { "-=": prices.buyerPrice } })
+        .where({ ID: req.user.id, creditBalance: { ">=": prices.buyerPrice } });
+      if (held !== 1) {
+        return req.reject(400, `Insufficient credits. Required: ${prices.buyerPrice.toFixed(2)}`);
+      }
+
+      // 2. The order. Fields are listed explicitly: whatever else the client
+      //    sent (status, buyer_ID, prices...) is ignored.
+      const ID = cds.utils.uuid();
+      await INSERT.into("marketplace.Orders").entries({
+        ID,
+        buyer_ID: req.user.id,
+        offer_ID,
+        status: "Pending",
+        wordCount,
+        ...prices,
+        title,
+        instructions,
+        sourceText,
+      });
+
+      // 3. Ledger entry for the hold
+      await INSERT.into("marketplace.Transactions").entries({
+        user_ID: req.user.id,
+        order_ID: ID,
+        type: "Hold",
+        amount: -prices.buyerPrice,
+        currency: "Credits",
+      });
+
+      // 4. History: the order was created in status Pending
+      await INSERT.into("marketplace.OrderEvents").entries({
+        order_ID: ID,
+        fromStatus: null,
+        toStatus: "Pending",
+        actor: req.user.id,
+      });
+
+      return SELECT.one.from(Orders, ID);
     });
 
     return super.init();
