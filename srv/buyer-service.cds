@@ -18,13 +18,30 @@ service BuyerService {
   @restrict: [{ grant: 'READ', where: 'ID = $user' }]
   entity Me as projection on db.Users { ID, name, email, creditBalance };
 
+  // Status changes only through bound actions, never through UPDATE.
   @restrict: [
-    { grant: 'READ', where: 'buyer_ID = $user' },
+    { grant: ['READ', 'cancel', 'resubmit', 'approve', 'requestRevision'], where: 'buyer_ID = $user' },
     { grant: 'CREATE' }
   ]
   entity Orders as projection on db.Orders {
     ID, buyer, offer, status, wordCount, buyerPrice,
-    title, instructions, sourceText, deliveredText, createdAt
+    title, instructions, sourceText, deliveredText, createdAt,
+    events
+  } actions {
+    action cancel(comment : String(1000)) returns Orders;
+    // the buyer answers the translator's questions by updating the instructions
+    action resubmit(
+      @mandatory instructions : String(2000),
+      comment : String(1000)
+    ) returns Orders;
+    action approve(comment : String(1000)) returns Orders;
+    action requestRevision(@mandatory comment : String(1000)) returns Orders;
+  };
+
+  @readonly
+  @restrict: [{ grant: 'READ', where: 'order.buyer_ID = $user' }]
+  entity OrderEvents as projection on db.OrderEvents {
+    ID, order, fromStatus, toStatus, comment, actor, createdAt
   };
 
   @restrict: [{ grant: 'READ', where: 'user_ID = $user' }]

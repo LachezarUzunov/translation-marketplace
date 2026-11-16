@@ -1,5 +1,6 @@
 import cds from "@sap/cds";
 import { calculatePrice } from "./lib/pricing.js";
+import { transitionOrder } from "./lib/order-transition.js";
 
 export default class BuyerService extends cds.ApplicationService {
   init() {
@@ -97,6 +98,31 @@ export default class BuyerService extends cds.ApplicationService {
         actor: req.user.id,
       });
 
+      return SELECT.one.from(Orders, ID);
+    });
+
+    // ---------- Status transitions (bound actions) ----------
+
+    // TODO Day 7: refund the held credits on cancel
+    this.on("cancel", Orders, async (req) => {
+      const { ID } = await transitionOrder(req, "cancel", { comment: req.data.comment });
+      return SELECT.one.from(Orders, ID);
+    });
+
+    this.on("resubmit", Orders, async (req) => {
+      const { instructions, comment } = req.data;
+      const { ID } = await transitionOrder(req, "resubmit", { set: { instructions }, comment });
+      return SELECT.one.from(Orders, ID);
+    });
+
+    // TODO Day 7: release translatorPrice to the translator + commission to the platform
+    this.on("approve", Orders, async (req) => {
+      const { ID } = await transitionOrder(req, "approve", { comment: req.data.comment });
+      return SELECT.one.from(Orders, ID);
+    });
+
+    this.on("requestRevision", Orders, async (req) => {
+      const { ID } = await transitionOrder(req, "requestRevision", { comment: req.data.comment });
       return SELECT.one.from(Orders, ID);
     });
 

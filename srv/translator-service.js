@@ -1,8 +1,9 @@
 import cds from "@sap/cds";
+import { transitionOrder } from "./lib/order-transition.js";
 
 export default class TranslatorService extends cds.ApplicationService {
   init() {
-    const { LanguagePairs, Offers, Withdrawals } = this.entities;
+    const { LanguagePairs, Offers, Withdrawals, Orders } = this.entities;
 
     // The owner is always the logged-in user
     this.before("CREATE", LanguagePairs, (req) => {
@@ -52,6 +53,30 @@ export default class TranslatorService extends cds.ApplicationService {
       if (amount > available) {
         return req.reject(400, `Insufficient balance. Available: ${available.toFixed(2)}`);
       }
+    });
+
+    // ---------- Status transitions (bound actions) ----------
+
+    this.on("accept", Orders, async (req) => {
+      const { ID } = await transitionOrder(req, "accept", { comment: req.data.comment });
+      return SELECT.one.from(Orders, ID);
+    });
+
+    // TODO Day 7: refund the held credits to the buyer
+    this.on("decline", Orders, async (req) => {
+      const { ID } = await transitionOrder(req, "decline", { comment: req.data.comment });
+      return SELECT.one.from(Orders, ID);
+    });
+
+    this.on("requestChanges", Orders, async (req) => {
+      const { ID } = await transitionOrder(req, "requestChanges", { comment: req.data.comment });
+      return SELECT.one.from(Orders, ID);
+    });
+
+    this.on("deliver", Orders, async (req) => {
+      const { deliveredText, comment } = req.data;
+      const { ID } = await transitionOrder(req, "deliver", { set: { deliveredText }, comment });
+      return SELECT.one.from(Orders, ID);
     });
 
     return super.init();

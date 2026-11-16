@@ -4,9 +4,12 @@ Translation Marketplace е портфолио проект на SAP CAP (Node.js
 
 Целевата роля е SAP CAP Node.js backend developer (BTP Cloud Foundry). Приоритетът е backend логика, тестове и deploy в BTP. Frontend е на второ място.
 
-Как да работиш с мен
-Уча CAP, докато строя проекта. Обяснявай всяка стъпка: какво прави кодът и защо е избран този подход. Където има смисъл, сравнявай с Express или Laravel.
-След всяка стъпка задай 1–2 въпроса за проверка на разбирането.
+Как работим
+Работим като партньори (pair programming). Аз решавам какво строим и одобрявам решенията. Ти предлагаш подход, пишеш код, проверяваш го с реални заявки и тестове и казваш, ако виждаш по-добър вариант или грешка в моето предложение.
+Целта е да разбирам всеки ред, който е в repo-то, и да мога да го защитя на интервю. Затова:
+- Обяснявай всяка стъпка: какво прави кодът и защо е избран този подход. Където има смисъл, сравнявай с Express или Laravel.
+- След всяка стъпка задай 1–2 въпроса за проверка на разбирането и давай честна обратна връзка на отговорите ми.
+- Не твърди, че нещо работи, ако не е проверено.
 Пиши директно, без увъртания. Ако предложението ми е грешно, кажи го.
 Разговаряме на български, а кодът, коментарите в кода и commit съобщенията са на английски.
 Всеки ден завършва с commit.
@@ -41,7 +44,7 @@ translatorPrice = round2(pricePerWord × wordCount)
 commission = max(translatorPrice × rate, minimum)
 buyerPrice = translatorPrice + commission
 Конфигурация. Процентът и минимумът са в cds.env.marketplace.commission (rate 0.20, minimum 10), не в кода. Цените се копират в поръчката при създаване и не се променят след това.
-Преходи. Статусите се сменят само чрез bound actions на Orders (accept, reject, requestChanges, deliver, approve, requestRevision, cancel, resubmit), никога чрез UPDATE на status. Всеки преход се записва в OrderEvents.
+Преходи. Статусите се сменят само чрез bound actions на Orders (преводач: accept, decline, requestChanges, deliver; купувач: resubmit, cancel, approve, requestRevision), никога чрез UPDATE на status. Таблицата на преходите е в srv/lib/order-workflow.js (единствен източник на истина), а изпълнението е в srv/lib/order-transition.js: проверка на собственик, optimistic lock (UPDATE ... WHERE status = прочетения), запис в OrderEvents.
 Права.
 Три услуги (BuyerService, TranslatorService, AdminService) с @requires.
 Права на ниво запис с @restrict + where.
@@ -63,15 +66,20 @@ OData lambda: без интервал след двоеточието: offers/an
 cds deploy към in-memory база няма ефект върху работещия cds watch.
 Промени в package.json може да изискват ръчен рестарт на cds watch.
 Mocked auth пуска непознати потребители без роли: резултатът е 403, не 401.
+"type": "module" в package.json изисква import/export в srv/*.js; require хвърля грешка.
+Action не може да се казва като метод на ApplicationService (reject, emit, send, run...). CAP дава WARNING при старт. Затова е decline, а не reject.
+@restrict с where върху bound action: чужд запис дава 403 от CAP, преди да стигне до handler-а.
+Анотацията (@assert.range) е на конкретния елемент, не на името. Параметрите на action/function се анотират отделно.
+cds serve стартира за ~7 s; при тестови скриптове изчаквай "server listening" в лога.
 План и статус
 [x] Ден 1–2: setup, основи на OData V4
 [x] Ден 3: модел, enums, CSV данни, конфигурация на комисионната
 [x] Ден 4: услуги по роли, @requires / @restrict, mocked auth
 [x] Ден 5: handler-и: ESM, валидации (анотации + handler-и), pricing.js (чиста функция, цели центове, node:test), function quote, action topUp, on CREATE Orders (атомарен Hold с условен UPDATE, леджър, OrderEvent)
-[ ] Ден 6: bound actions за преходите + OrderEvents
+[x] Ден 6: state machine (order-workflow.js + unit тестове), 8 bound actions, optimistic lock, OrderEvents с история по роли. Refund/Release са TODO за Ден 7. README на английски за работодатели.
 [ ] Ден 7: Refund, Release + Commission, тегления; атомарност
 [ ] Ден 8: тестове с cds.test (целият поток, рефънд, недостатъчен баланс, двойно одобрение, баланс = сума на транзакциите)
 [ ] Ден 9: custom Express middleware / REST endpoint, Dockerfile
 [ ] Ден 10–11: deploy в BTP trial (Cloud Foundry, mta, XSUAA, HANA Cloud / PostgreSQL)
 [ ] Ден 12: Fiori Elements за админа
-[ ] Ден 13: README с диаграма на статусите
+[ ] Ден 13: финален README (README с диаграма на статусите вече съществува; обновявай го при всеки завършен ден)

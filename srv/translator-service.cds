@@ -18,10 +18,29 @@ service TranslatorService {
   ]
   entity Offers as projection on db.Offers;
 
-  @restrict: [{ grant: 'READ', where: 'offer.languagePair.translator_ID = $user' }]
+  // Status changes only through bound actions, never through UPDATE.
+  @restrict: [{
+    grant: ['READ', 'accept', 'decline', 'requestChanges', 'deliver'],
+    where: 'offer.languagePair.translator_ID = $user'
+  }]
   entity Orders as projection on db.Orders {
     ID, offer, status, wordCount, translatorPrice,
-    title, instructions, sourceText, deliveredText, createdAt
+    title, instructions, sourceText, deliveredText, createdAt,
+    events
+  } actions {
+    action accept(comment : String(1000)) returns Orders;
+    action decline(@mandatory comment : String(1000)) returns Orders;
+    action requestChanges(@mandatory comment : String(1000)) returns Orders;
+    action deliver(
+      @mandatory deliveredText : LargeString,
+      comment : String(1000)
+    ) returns Orders;
+  };
+
+  @readonly
+  @restrict: [{ grant: 'READ', where: 'order.offer.languagePair.translator_ID = $user' }]
+  entity OrderEvents as projection on db.OrderEvents {
+    ID, order, fromStatus, toStatus, comment, actor, createdAt
   };
 
   @restrict: [

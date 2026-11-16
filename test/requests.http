@@ -118,3 +118,95 @@ Authorization: Basic buyer1:pass
 ### Преводач: вижда поръчката с translatorPrice, без buyerPrice
 GET {{base}}/translator/Orders
 Authorization: Basic translator1:pass
+
+# ================= Ден 6: преходи на статуса =================
+# Създай поръчка по-горе и копирай ID-то тук
+@order = PASTE-ORDER-ID
+
+### Преводач: иска уточнение без коментар -> 400 ASSERT_MANDATORY
+POST {{base}}/translator/Orders({{order}})/TranslatorService.requestChanges
+Authorization: Basic translator1:pass
+Content-Type: application/json
+
+{}
+
+### Преводач: иска уточнение -> ChangesRequested
+POST {{base}}/translator/Orders({{order}})/TranslatorService.requestChanges
+Authorization: Basic translator1:pass
+Content-Type: application/json
+
+{ "comment": "Which dialect?" }
+
+### Купувач: отговаря -> Pending
+POST {{base}}/buyer/Orders({{order}})/BuyerService.resubmit
+Authorization: Basic buyer1:pass
+Content-Type: application/json
+
+{ "instructions": "British English" }
+
+### Купувач: одобрява твърде рано -> 409
+POST {{base}}/buyer/Orders({{order}})/BuyerService.approve
+Authorization: Basic buyer1:pass
+Content-Type: application/json
+
+{}
+
+### Чужд преводач приема -> 403 (от @restrict, преди handler-а)
+POST {{base}}/translator/Orders({{order}})/TranslatorService.accept
+Authorization: Basic translator2:pass
+Content-Type: application/json
+
+{}
+
+### Купувач: директна смяна на статуса -> 403/405
+PATCH {{base}}/buyer/Orders({{order}})
+Authorization: Basic buyer1:pass
+Content-Type: application/json
+
+{ "status": "Completed" }
+
+### Преводач: приема -> Accepted
+POST {{base}}/translator/Orders({{order}})/TranslatorService.accept
+Authorization: Basic translator1:pass
+Content-Type: application/json
+
+{}
+
+### Купувач: анулира след приемане -> 409
+POST {{base}}/buyer/Orders({{order}})/BuyerService.cancel
+Authorization: Basic buyer1:pass
+Content-Type: application/json
+
+{}
+
+### Преводач: предава -> Delivered
+POST {{base}}/translator/Orders({{order}})/TranslatorService.deliver
+Authorization: Basic translator1:pass
+Content-Type: application/json
+
+{ "deliveredText": "Draft v1" }
+
+### Купувач: иска корекция -> RevisionRequested
+POST {{base}}/buyer/Orders({{order}})/BuyerService.requestRevision
+Authorization: Basic buyer1:pass
+Content-Type: application/json
+
+{ "comment": "Fix paragraph 2" }
+
+### Преводач: предава отново -> Delivered
+POST {{base}}/translator/Orders({{order}})/TranslatorService.deliver
+Authorization: Basic translator1:pass
+Content-Type: application/json
+
+{ "deliveredText": "Draft v2" }
+
+### Купувач: одобрява -> Completed
+POST {{base}}/buyer/Orders({{order}})/BuyerService.approve
+Authorization: Basic buyer1:pass
+Content-Type: application/json
+
+{}
+
+### Купувач: историята на поръчката
+GET {{base}}/buyer/Orders({{order}})?$expand=events($orderby=createdAt)
+Authorization: Basic buyer1:pass
